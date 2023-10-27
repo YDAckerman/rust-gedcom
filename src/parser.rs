@@ -1,4 +1,4 @@
-//! The state machine that parses a char iterator of the gedcom's contents
+ //! The state machine that parses a char iterator of the gedcom's contents
 use std::{panic, str::Chars};
 
 use crate::tokenizer::{Token, Tokenizer};
@@ -37,12 +37,17 @@ impl<'a> Parser<'a> {
 
             self.tokenizer.next_token();
 
+            // what is happening here?
+            // a pointer is created, then conditionally assigned the value
+            // of the token if the token is a pointer. then the token is next'd.
             let mut pointer: Option<String> = None;
             if let Token::Pointer(xref) = &self.tokenizer.current_token {
                 pointer = Some(xref.to_string());
                 self.tokenizer.next_token();
             }
 
+            // the pointer is used when parseing families, individuals, etc.
+            // so i'll need to go into the tree implementation to figure that out
             if let Token::Tag(tag) = &self.tokenizer.current_token {
                 match tag.as_str() {
                     "HEAD" => data.header = self.parse_header(),
@@ -191,6 +196,17 @@ impl<'a> Parser<'a> {
                         self.tokenizer.next_token(); // DATE tag
                         individual.last_updated = Some(self.take_line_value());
                     }
+                    "TITL" => {
+                        // TODO
+                        self.tokenizer.next_token(); // skip the next two tokens
+                        self.tokenizer.next_token(); //
+                    }
+                    "REFN" => {
+                        // TODO
+                        self.tokenizer.next_token(); // skip the next two tokens
+                        self.tokenizer.next_token(); //
+                    }
+                    
                     _ => panic!("{} Unhandled Individual Tag: {}", self.dbg(), tag),
                 },
                 Token::CustomTag(tag) => {
@@ -221,6 +237,11 @@ impl<'a> Parser<'a> {
                     "HUSB" => family.set_individual1(self.take_line_value()),
                     "WIFE" => family.set_individual2(self.take_line_value()),
                     "CHIL" => family.add_child(self.take_line_value()),
+                    "DIV" => {
+                        // TODO
+                        self.tokenizer.next_token(); // skip the next two tokens
+                        self.tokenizer.next_token(); //
+                    }
                     _ => panic!("{} Unhandled Family Tag: {}", self.dbg(), tag),
                 },
                 Token::Level(_) => self.tokenizer.next_token(),
