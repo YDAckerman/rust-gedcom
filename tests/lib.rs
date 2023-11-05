@@ -42,6 +42,20 @@ mod tests {
             "/Father/"
         );
 
+        // title
+        assert_eq!(
+            data.individuals[0]
+                .title
+                .as_ref()
+                .unwrap(),
+            "title"
+        );
+
+        assert_eq!(
+            data.individuals[1].title.is_none(),
+            true
+        );
+        
         // addresses
         assert_eq!(
             data.submitters[0]

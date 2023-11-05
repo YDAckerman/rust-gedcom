@@ -196,17 +196,12 @@ impl<'a> Parser<'a> {
                         self.tokenizer.next_token(); // DATE tag
                         individual.last_updated = Some(self.take_line_value());
                     }
-                    "TITL" => {
-                        // TODO
-                        self.tokenizer.next_token(); // skip the next two tokens
-                        self.tokenizer.next_token(); //
-                    }
+                    "TITL" => individual.title = self.parse_indv_title(),
                     "REFN" => {
                         // TODO
                         self.tokenizer.next_token(); // skip the next two tokens
                         self.tokenizer.next_token(); //
-                    }
-                    
+                    },
                     _ => panic!("{} Unhandled Individual Tag: {}", self.dbg(), tag),
                 },
                 Token::CustomTag(tag) => {
@@ -428,6 +423,17 @@ impl<'a> Parser<'a> {
         }
         self.tokenizer.next_token();
         gender
+    }
+
+    fn parse_indv_title(&mut self) -> Option<String> {
+        self.tokenizer.next_token();
+        let title: String = match &self.tokenizer.current_token {
+            Token::LineValue(s) => s.clone(),
+            _ => panic!("Expected title LineValue<String>, found {:?}",
+                        self.tokenizer.current_token),
+        };
+        self.tokenizer.next_token();
+        Some(title)
     }
 
     fn parse_name(&mut self, level: u8) -> Name {

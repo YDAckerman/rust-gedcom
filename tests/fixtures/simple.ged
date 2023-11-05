@@ -11,6 +11,7 @@
 2 CONT address continued here
 0 @FATHER@ INDI
 1 NAME /Father/
+1 TITL title
 1 SEX M
 1 BIRT
 2 PLAC birth place

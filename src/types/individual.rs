@@ -10,6 +10,7 @@ type Xref = String;
 pub struct Individual {
     pub xref: Option<Xref>,
     pub name: Option<Name>,
+    pub title: Option<String>,
     pub sex: Gender,
     pub families: Vec<FamilyLink>,
     pub custom_data: Vec<CustomData>,
@@ -23,6 +24,7 @@ impl Individual {
         Individual {
             xref,
             name: None,
+            title: None,
             sex: Gender::Unknown,
             events: Vec::new(),
             families: Vec::new(),
