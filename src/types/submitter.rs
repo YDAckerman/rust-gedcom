@@ -14,6 +14,8 @@ pub struct Submitter {
     pub name: Option<String>,
     /// Physical address of the submitter
     pub address: Option<Address>,
+    /// Submitter comments
+    pub comments: Option<String>,
     /// Phone number of the submitter
     pub phone: Option<String>,
 }
@@ -26,6 +28,7 @@ impl Submitter {
             xref,
             name: None,
             address: None,
+            comments: None,
             phone: None,
         }
     }

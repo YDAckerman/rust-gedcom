@@ -68,6 +68,16 @@ mod tests {
             "Submitters address\naddress continued here"
         );
 
+        // submitter comments
+        assert_eq!(
+            data.submitters[0]
+                .comments
+                .as_ref()
+                .unwrap(),
+            "message line 1\nmessage line 2\nmessage line 3"
+                
+        );
+
         // events
         let events = data.families[0].events();
         assert_eq!(events.len(), 1);

@@ -155,6 +155,7 @@ impl<'a> Parser<'a> {
                         submitter.address = Some(self.parse_address(level + 1));
                     }
                     "PHON" => submitter.phone = Some(self.take_line_value()),
+                    "COMM" => submitter.comments = self.parse_comments(level + 1),
                     _ => panic!("{} Unhandled Submitter Tag: {}", self.dbg(), tag),
                 },
                 Token::Level(_) => self.tokenizer.next_token(),
@@ -486,6 +487,37 @@ impl<'a> Parser<'a> {
         event
     }
 
+    fn parse_comments(&mut self, level: u8) -> Option<String> {
+        self.tokenizer.next_token();
+        let mut value = String::new();
+
+        if let Token::LineValue(comm) = &self.tokenizer.current_token {
+            value.push_str(comm);
+            self.tokenizer.next_token();
+        }
+
+        loop {
+            if let Token::Level(cur_level) = self.tokenizer.current_token {
+                if cur_level <= level {
+                    break;
+                }
+            }
+            match &self.tokenizer.current_token {
+                Token::Tag(tag) => match tag.as_str() {
+                    "CONT" => {
+                        value.push('\n');
+                        value.push_str(&self.take_line_value());
+                    },
+                    _ => panic!("{} Unhandled Comment Tag: {}", self.dbg(), tag),
+                },
+                Token::Level(_) => self.tokenizer.next_token(),
+                _ => panic!("Unhandled Comment Token: {:?}", self.tokenizer.current_token)
+            }
+        }
+
+        Some(value)
+    }
+    
     /// Parses ADDR tag
     fn parse_address(&mut self, level: u8) -> Address {
         // skip ADDR tag
