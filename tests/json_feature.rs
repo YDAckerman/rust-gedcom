@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod lib;
 
 #[cfg(test)]
 #[cfg(feature = "json")]

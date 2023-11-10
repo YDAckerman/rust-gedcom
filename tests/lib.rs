@@ -75,7 +75,6 @@ mod tests {
                 .as_ref()
                 .unwrap(),
             "message line 1\nmessage line 2\nmessage line 3"
-                
         );
 
         // events

@@ -2,6 +2,8 @@ use crate::types::{Family, Header, Individual, Media, Repository, Source, Submit
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
+// use std::collections::HashMap;
+
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 /// The data structure representing all the data within a gedcom file

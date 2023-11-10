@@ -8,7 +8,7 @@ type Xref = String;
 #[derive(Debug)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Individual {
-    pub xref: Option<Xref>,
+    pub xref: Option<Xref>, // this MUST exist, so remove Option
     pub name: Option<Name>,
     pub title: Option<String>,
     pub sex: Gender,
