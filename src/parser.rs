@@ -1,5 +1,7 @@
  //! The state machine that parses a char iterator of the gedcom's contents
 use std::{panic, str::Chars};
+use thiserror::Error;
+
 
 use crate::tokenizer::{Token, Tokenizer};
 use crate::tree::GedcomData;
@@ -7,6 +9,22 @@ use crate::types::{
     event::HasEvents, Address, CustomData, Event, Family, FamilyLink, Gender, Header, Individual,
     Name, RepoCitation, Repository, Source, SourceCitation, Submitter,
 };
+
+#[derive(Error, Debug)]
+pub enum ParseError {
+    #[error("Unhandled Tag on line {line}: found {tag}")]
+    UnhandledTag {
+        line: String,
+        tag: String,
+    },
+    #[error("Unhandled Token on line {line}: found {token:?}")]
+    UnhandledToken {
+        line: String,
+        token: Token,
+    },
+    #[error("Expected TIME to be under DATE in header.")]
+    MissingData,
+}
 
 /// The Gedcom parser that converts the token list into a data structure
 pub struct Parser<'a> {
@@ -23,31 +41,28 @@ impl<'a> Parser<'a> {
     }
 
     /// Does the actual parsing of the record.
-    pub fn parse_record(&mut self) -> GedcomData {
+    pub fn parse_record(&mut self) -> Result<GedcomData, ParseError> {
         let mut data = GedcomData::default();
         loop {
             let level = match self.tokenizer.current_token {
                 Token::Level(n) => n,
-                _ => panic!(
-                    "{} Expected Level, found {:?}",
-                    self.dbg(),
-                    self.tokenizer.current_token
-                ),
+                _ => {
+                    let error = ParseError::UnhandledToken {
+                        line: self.dbg(),
+                        token: self.tokenizer.current_token.clone(),
+                    };
+                    return Err(error)
+                },
             };
 
             self.tokenizer.next_token();
 
-            // what is happening here?
-            // a pointer is created, then conditionally assigned the value
-            // of the token if the token is a pointer. then the token is next'd.
             let mut pointer: Option<String> = None;
             if let Token::Pointer(xref) = &self.tokenizer.current_token {
                 pointer = Some(xref.to_string());
                 self.tokenizer.next_token();
             }
 
-            // the pointer is used when parseing families, individuals, etc.
-            // so i'll need to go into the tree implementation to figure that out
             if let Token::Tag(tag) = &self.tokenizer.current_token {
                 match tag.as_str() {
                     "HEAD" => data.header = self.parse_header(),
@@ -84,7 +99,7 @@ impl<'a> Parser<'a> {
             };
         }
 
-        data
+        Ok(data)
     }
 
     /// Parses HEAD top-level tag

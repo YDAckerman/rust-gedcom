@@ -7,7 +7,7 @@ use gedcom::parser::Parser;
 let gedcom_source = std::fs::read_to_string("./tests/fixtures/sample.ged").unwrap();
 
 let mut parser = Parser::new(gedcom_source.chars());
-let gedcom_data = parser.parse_record();
+let gedcom_data = parser.parse_record().unwrap();
 
 // output some stats on the gedcom contents
 gedcom_data.stats();
@@ -23,6 +23,8 @@ This crate contains an optional `"json"` feature that implements serialization &
 mod util;
 
 pub mod parser;
+pub use parser::ParseError;
+    
 pub mod tokenizer;
 pub mod types;
 
@@ -31,7 +33,7 @@ pub use tree::GedcomData;
 
 #[must_use]
 /// Helper function for converting GEDCOM file content stream to parsed data.
-pub fn parse(content: std::str::Chars) -> GedcomData {
+pub fn parse(content: std::str::Chars) -> Result<GedcomData, ParseError> {
     let mut p = parser::Parser::new(content);
     p.parse_record()
 }

@@ -3,8 +3,9 @@ use gedcom::GedcomData;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use anyhow::Result;
 
-fn main() {
+fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     match args.len() {
         1 => usage("Missing filename."),
@@ -20,16 +21,13 @@ fn main() {
 
     let data: GedcomData;
 
-    if let Ok(contents) = read_relative(filename) {
-        let mut parser = Parser::new(contents.chars());
-        data = parser.parse_record();
+    let contents = read_relative(filename)?;
+    let mut parser = Parser::new(contents.chars());
+    data = parser.parse_record()?;
+    println!("Parsing complete!");
+    data.stats();
 
-        println!("Parsing complete!");
-        // println!("\n\n{:#?}", data);
-        data.stats();
-    } else {
-        exit_with_error(&format!("File '{}' not found.", filename));
-    }
+    Ok(())
 }
 
 fn read_relative(path: &str) -> Result<String, std::io::Error> {
@@ -46,7 +44,7 @@ fn usage(msg: &str) {
     std::process::exit(0x0100);
 }
 
-fn exit_with_error(msg: &str) {
-    println!("Error! {}", msg);
-    std::process::exit(0x1);
-}
+// fn exit_with_error(msg: &str) {
+//     println!("Error! {}", msg);
+//     std::process::exit(0x1);
+// }

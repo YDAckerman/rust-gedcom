@@ -5,7 +5,7 @@ use std::str::Chars;
 ///
 /// making use of [GEDCOM Standard Release 5.5.1](https://edge.fscdn.org/assets/img/documents/ged551-5bac5e57fe88dd37df0e153d9c515335.pdf), p.11
 /// `gedcom_line: level + delim + [optional_xref_ID] + tag + [optional_line_value] + terminator`
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     /// The `level`, denoting the depth within the tree
     Level(u8),

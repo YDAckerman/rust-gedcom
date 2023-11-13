@@ -20,7 +20,7 @@ mod tests {
         assert!(simple_ged.len() > 0);
 
         let mut parser = Parser::new(simple_ged.chars());
-        let data = parser.parse_record();
+        let data = parser.parse_record().unwrap();
         assert_eq!(data.individuals.len(), 3);
         assert_eq!(data.families.len(), 1);
         assert_eq!(data.submitters.len(), 1);
