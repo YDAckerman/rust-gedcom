@@ -22,9 +22,12 @@ pub enum ParseError {
         line: String,
         token: Token,
     },
-    #[error("Expected TIME to be under DATE in header.")]
-    MissingData,
+    #[error("Data missing on line {0}")]
+    MissingData(String),
+    #[error("Data malformed on line {0}")]
+    MalformedData(String),
 }
+
 
 /// The Gedcom parser that converts the token list into a data structure
 pub struct Parser<'a> {
@@ -47,11 +50,7 @@ impl<'a> Parser<'a> {
             let level = match self.tokenizer.current_token {
                 Token::Level(n) => n,
                 _ => {
-                    let error = ParseError::UnhandledToken {
-                        line: self.dbg(),
-                        token: self.tokenizer.current_token.clone(),
-                    };
-                    return Err(error)
+                    return Err(self.token_error())
                 },
             };
 
@@ -65,19 +64,20 @@ impl<'a> Parser<'a> {
 
             if let Token::Tag(tag) = &self.tokenizer.current_token {
                 match tag.as_str() {
-                    "HEAD" => data.header = self.parse_header(),
+                    "HEAD" => data.header = self.parse_header()?,
                     "FAM" => data.add_family(self.parse_family(level, pointer)),
                     "INDI" => data.add_individual(self.parse_individual(level, pointer)),
                     "REPO" => data.add_repository(self.parse_repository(level, pointer)),
                     "SOUR" => data.add_source(self.parse_source(level, pointer)),
-                    "SUBM" => data.add_submitter(self.parse_submitter(level, pointer)),
+                    "SUBM" => {
+                        let submitter = self.parse_submitter(level, pointer)?;
+                        data.add_submitter(submitter);
+                    },
                     "TRLR" => break,
-                    _ => {
-                        println!("{} Unhandled tag {}", self.dbg(), tag);
-                        self.tokenizer.next_token();
+                    _ => return Err(self.tag_error()),
                     }
-                };
-            } else if let Token::CustomTag(tag) = &self.tokenizer.current_token {
+            }
+            else if let Token::CustomTag(tag) = &self.tokenizer.current_token {
                 // TODO
                 let tag_clone = tag.clone();
                 let custom_data = self.parse_custom_tag(tag_clone);
@@ -90,12 +90,7 @@ impl<'a> Parser<'a> {
                     self.tokenizer.next_token();
                 }
             } else {
-                println!(
-                    "{} Unhandled token {:?}",
-                    self.dbg(),
-                    self.tokenizer.current_token
-                );
-                self.tokenizer.next_token();
+                return Err(self.token_error())
             };
         }
 
@@ -103,7 +98,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses HEAD top-level tag
-    fn parse_header(&mut self) -> Header {
+    fn parse_header(&mut self) -> Result<Header, ParseError> {
         // skip over HEAD tag name
         self.tokenizer.next_token();
 
@@ -134,7 +129,8 @@ impl<'a> Parser<'a> {
                             datetime.push_str(&time);
                             header.date = Some(datetime);
                         } else {
-                            panic!("Expected TIME to be under DATE in header.");
+                            return Err(ParseError::MalformedData(self.dbg()))
+                            // panic!("Expected TIME to be under DATE in header.");
                         }
                     }
                     "GEDC" => {
@@ -147,17 +143,17 @@ impl<'a> Parser<'a> {
                             self.tokenizer.next_token();
                         }
                     }
-                    _ => panic!("{} Unhandled Header Tag: {}", self.dbg(), tag),
+                    _ => return Err(self.tag_error()),
                 },
                 Token::Level(_) => self.tokenizer.next_token(),
-                _ => panic!("Unhandled Header Token: {:?}", self.tokenizer.current_token),
+                _ => return Err(self.token_error()),
             }
         }
-        header
+        Ok(header)
     }
 
     /// Parses SUBM top-level tag
-    fn parse_submitter(&mut self, level: u8, xref: Option<String>) -> Submitter {
+    fn parse_submitter(&mut self, level: u8, xref: Option<String>) -> Result<Submitter, ParseError> {
         // skip over SUBM tag name
         self.tokenizer.next_token();
 
@@ -171,17 +167,14 @@ impl<'a> Parser<'a> {
                     }
                     "PHON" => submitter.phone = Some(self.take_line_value()),
                     "COMM" => submitter.comments = self.parse_comments(level + 1),
-                    _ => panic!("{} Unhandled Submitter Tag: {}", self.dbg(), tag),
+                    _ => return Err(self.tag_error()),
                 },
                 Token::Level(_) => self.tokenizer.next_token(),
-                _ => panic!(
-                    "Unhandled Submitter Token: {:?}",
-                    self.tokenizer.current_token
-                ),
+                _ => return Err(self.token_error()),
             }
         }
         // println!("found submitter:\n{:#?}", submitter);
-        submitter
+        Ok(submitter)
     }
 
     /// Parses INDI top-level tag
@@ -664,4 +657,25 @@ impl<'a> Parser<'a> {
     fn dbg(&self) -> String {
         format!("line {}:", self.tokenizer.line)
     }
+
+    fn tag_error(&self) -> ParseError {
+        if let Token::Tag(tag) = &self.tokenizer.current_token {
+            let error = ParseError::UnhandledTag {
+                line: self.dbg(),
+                tag: tag.clone(),
+            };
+            return error
+        }
+        panic!("tag_error called improperly");
+    }
+
+    fn token_error(&self) -> ParseError {
+        let error = ParseError::UnhandledToken {
+            line: self.dbg(),
+            token: self.tokenizer.current_token.clone(),
+        };
+        error
+    }
+
+
 }
