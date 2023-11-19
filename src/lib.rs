@@ -31,9 +31,13 @@ pub mod types;
 mod tree;
 pub use tree::GedcomData;
 
+use anyhow::Result;
+
 #[must_use]
 /// Helper function for converting GEDCOM file content stream to parsed data.
-pub fn parse(content: std::str::Chars) -> Result<GedcomData, ParseError> {
+pub fn parse(content: std::str::Chars) -> Result<GedcomData> {
     let mut p = parser::Parser::new(content);
-    p.parse_record()
+    let tree = p.parse_record()?;
+
+    Ok(tree)
 }

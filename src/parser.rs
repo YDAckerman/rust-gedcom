@@ -1,38 +1,52 @@
- //! The state machine that parses a char iterator of the gedcom's contents
-use std::{panic, str::Chars};
+//! The state machine that parses a char iterator of the gedcom's contents
+use std::str::Chars;
 use thiserror::Error;
-
+use anyhow::Result;
 
 use crate::tokenizer::{Token, Tokenizer};
 use crate::tree::GedcomData;
 use crate::types::{
-    event::HasEvents, Address, CustomData, Event, Family, FamilyLink, Gender, Header, Individual,
-    Name, RepoCitation, Repository, Source, SourceCitation, Submitter,
+    event::HasEvents, Address, CustomData, Event,
+    Family, FamilyLink, Gender, Header, Individual,
+    Name, RepoCitation, Repository, Source, SourceCitation,
+    Submitter
 };
 
+
 #[derive(Error, Debug)]
+/// Errors caught in parsing
 pub enum ParseError {
+    /// An error reporting an unhandled Tag
     #[error("Unhandled Tag on line {line}: found {tag}")]
     UnhandledTag {
+        /// the line number
         line: String,
+        /// the tag found
         tag: String,
     },
+    /// An error reporting an unhandled Value
     #[error("Unhandled Value on line {line}: found {value}")]
     UnhandledValue {
+        /// the line number 
         line: String,
+        /// the value found
         value: String,
     },
+    /// An error reporting an unhandled Token
     #[error("Unhandled Token on line {line}: found {token:?}")]
     UnhandledToken {
+        /// the line number
         line: String,
+        /// the token found
         token: Token,
     },
+    /// An error reporting data is missing
     #[error("Data missing on line {0}")]
     MissingData(String),
+    /// An error reporting data is malformed
     #[error("Data malformed on line {0}")]
     MalformedData(String),
 }
-
 
 /// The Gedcom parser that converts the token list into a data structure
 pub struct Parser<'a> {
@@ -49,14 +63,12 @@ impl<'a> Parser<'a> {
     }
 
     /// Does the actual parsing of the record.
-    pub fn parse_record(&mut self) -> Result<GedcomData, ParseError> {
+    pub fn parse_record(&mut self) -> Result<GedcomData> {
         let mut data = GedcomData::default();
         loop {
-            let level = match self.tokenizer.current_token {
-                Token::Level(n) => n,
-                _ => {
+            
+            let Token::Level(level) = self.tokenizer.current_token else {
                     return Err(self.token_error())
-                },
             };
 
             self.tokenizer.next_token();
@@ -103,7 +115,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses HEAD top-level tag
-    fn parse_header(&mut self) -> Result<Header, ParseError> {
+    fn parse_header(&mut self) -> Result<Header> {
         // skip over HEAD tag name
         self.tokenizer.next_token();
 
@@ -134,7 +146,7 @@ impl<'a> Parser<'a> {
                             datetime.push_str(&time);
                             header.date = Some(datetime);
                         } else {
-                            return Err(ParseError::MalformedData(self.dbg()))
+                            return Err(Into::into(ParseError::MalformedData(self.dbg())))
                             // panic!("Expected TIME to be under DATE in header.");
                         }
                     }
@@ -158,7 +170,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses SUBM top-level tag
-    fn parse_submitter(&mut self, level: u8, xref: Option<String>) -> Result<Submitter, ParseError> {
+    fn parse_submitter(&mut self, level: u8, xref: Option<String>) -> Result<Submitter> {
         // skip over SUBM tag name
         self.tokenizer.next_token();
 
@@ -183,7 +195,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses INDI top-level tag
-    fn parse_individual(&mut self, level: u8, xref: Option<String>) -> Result<Individual, ParseError> {
+    fn parse_individual(&mut self, level: u8, xref: Option<String>) -> Result<Individual> {
         // skip over INDI tag name
         self.tokenizer.next_token();
         let mut individual = Individual::new(xref);
@@ -231,7 +243,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses FAM top-level tag
-    fn parse_family(&mut self, level: u8, xref: Option<String>) -> Result<Family, ParseError> {
+    fn parse_family(&mut self, level: u8, xref: Option<String>) -> Result<Family> {
         // skip over FAM tag name
         self.tokenizer.next_token();
         let mut family = Family::new(xref);
@@ -259,7 +271,7 @@ impl<'a> Parser<'a> {
         Ok(family)
     }
 
-    fn parse_source(&mut self, level: u8, xref: Option<String>) -> Result<Source, ParseError> {
+    fn parse_source(&mut self, level: u8, xref: Option<String>) -> Result<Source> {
         // skip SOUR tag
         self.tokenizer.next_token();
         let mut source = Source::new(xref);
@@ -295,7 +307,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses REPO top-level tag.
-    fn parse_repository(&mut self, level: u8, xref: Option<String>) -> Result<Repository, ParseError> {
+    fn parse_repository(&mut self, level: u8, xref: Option<String>) -> Result<Repository> {
         // skip REPO tag
         self.tokenizer.next_token();
         let mut repo = Repository {
@@ -323,13 +335,13 @@ impl<'a> Parser<'a> {
         Ok(repo)
     }
 
-    fn parse_custom_tag(&mut self, tag: String) -> Result<CustomData, ParseError> {
+    fn parse_custom_tag(&mut self, tag: String) -> Result<CustomData> {
         let value = self.take_line_value()?;
         Ok(CustomData { tag, value })
     }
 
     /// Handle parsing GEDC tag
-    fn parse_gedcom_data(&mut self, mut header: Header) -> Result<Header, ParseError> {
+    fn parse_gedcom_data(&mut self, mut header: Header) -> Result<Header> {
         // skip GEDC tag
         self.tokenizer.next_token();
 
@@ -342,8 +354,7 @@ impl<'a> Parser<'a> {
                         let form = self.take_line_value()?;
                         if &form.to_uppercase() != "LINEAGE-LINKED" {
                             println!(
-                                "WARNING: Unrecognized GEDCOM form. Expected LINEAGE-LINKED, found {}"
-                            , form);
+                                "WARNING: Unrecognized GEDCOM form. Expected LINEAGE-LINKED, found {form}");
                         }
                     }
                     _ => return Err(self.tag_error()),
@@ -355,7 +366,7 @@ impl<'a> Parser<'a> {
         Ok(header)
     }
 
-    fn parse_family_link(&mut self, tag: &str, level: u8) -> Result<FamilyLink, ParseError> {
+    fn parse_family_link(&mut self, tag: &str, level: u8) -> Result<FamilyLink> {
         let xref = self.take_line_value()?;
         let mut link = FamilyLink::new(xref, tag);
 
@@ -378,7 +389,7 @@ impl<'a> Parser<'a> {
         Ok(link)
     }
 
-    fn parse_repo_citation(&mut self, level: u8) -> Result<RepoCitation, ParseError> {
+    fn parse_repo_citation(&mut self, level: u8) -> Result<RepoCitation> {
         let xref = self.take_line_value()?;
         let mut citation = RepoCitation {
             xref,
@@ -403,7 +414,7 @@ impl<'a> Parser<'a> {
         Ok(citation)
     }
 
-    fn parse_gender(&mut self) -> Result<Gender, ParseError> {
+    fn parse_gender(&mut self) -> Result<Gender> {
         self.tokenizer.next_token();
         let gender: Gender;
         if let Token::LineValue(gender_string) = &self.tokenizer.current_token {
@@ -421,7 +432,7 @@ impl<'a> Parser<'a> {
         Ok(gender)
     }
 
-    fn parse_indv_title(&mut self) -> Result<String, ParseError> {
+    fn parse_indv_title(&mut self) -> Result<String> {
         self.tokenizer.next_token();
         let title: String = match &self.tokenizer.current_token {
             Token::LineValue(s) => s.clone(),
@@ -431,7 +442,7 @@ impl<'a> Parser<'a> {
         Ok(title)
     }
 
-    fn parse_name(&mut self, level: u8) -> Result<Name, ParseError> {
+    fn parse_name(&mut self, level: u8) -> Result<Name> {
         let mut name = Name::default();
         name.value = Some(self.take_line_value()?);
 
@@ -458,7 +469,7 @@ impl<'a> Parser<'a> {
         Ok(name)
     }
 
-    fn parse_event(&mut self, tag: &str, level: u8) -> Result<Event, ParseError> {
+    fn parse_event(&mut self, tag: &str, level: u8) -> Result<Event> {
         self.tokenizer.next_token();
         let mut event = Event::from_tag(tag);
         loop {
@@ -481,7 +492,7 @@ impl<'a> Parser<'a> {
         Ok(event)
     }
 
-    fn parse_comments(&mut self, level: u8) -> Result<String, ParseError> {
+    fn parse_comments(&mut self, level: u8) -> Result<String> {
         self.tokenizer.next_token();
         let mut value = String::new();
 
@@ -513,7 +524,7 @@ impl<'a> Parser<'a> {
     }
     
     /// Parses ADDR tag
-    fn parse_address(&mut self, level: u8) -> Result<Address, ParseError> {
+    fn parse_address(&mut self, level: u8) -> Result<Address> {
         // skip ADDR tag
         self.tokenizer.next_token();
         let mut address = Address::default();
@@ -558,7 +569,7 @@ impl<'a> Parser<'a> {
         Ok(address)
     }
 
-    fn parse_citation(&mut self, level: u8) -> Result<SourceCitation, ParseError> {
+    fn parse_citation(&mut self, level: u8) -> Result<SourceCitation> {
         let mut citation = SourceCitation {
             xref: self.take_line_value()?,
             page: None,
@@ -583,7 +594,7 @@ impl<'a> Parser<'a> {
 
     /// Takes the value of the current line including handling
     /// multi-line values from CONT & CONC tags.
-    fn take_continued_text(&mut self, level: u8) -> Result<String, ParseError> {
+    fn take_continued_text(&mut self, level: u8) -> Result<String> {
         let mut value = self.take_line_value()?;
 
         loop {
@@ -613,7 +624,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Grabs and returns to the end of the current line as a String
-    fn take_line_value(&mut self) -> Result<String, ParseError> {
+    fn take_line_value(&mut self) -> Result<String> {
         let value: String;
         self.tokenizer.next_token();
 
@@ -631,34 +642,34 @@ impl<'a> Parser<'a> {
         format!("line {}:", self.tokenizer.line)
     }
 
-    fn tag_error(&self) -> ParseError {
+    fn tag_error(&self) -> anyhow::Error {
         if let Token::Tag(tag) = &self.tokenizer.current_token {
             let error = ParseError::UnhandledTag {
                 line: self.dbg(),
                 tag: tag.clone(),
             };
-            return error
+            return Into::into(error)
         }
         panic!("tag_error called improperly");
     }
 
-    fn value_error(&self) -> ParseError {
+    fn value_error(&self) -> anyhow::Error {
         if let Token::LineValue(val) = &self.tokenizer.current_token {
             let error = ParseError::UnhandledValue {
                 line: self.dbg(),
                 value: val.clone(),
             };
-            return error
+            return Into::into(error)
         }
         panic!("value_error called improperly");
     }
 
-    fn token_error(&self) -> ParseError {
+    fn token_error(&self) -> anyhow::Error {
         let error = ParseError::UnhandledToken {
             line: self.dbg(),
             token: self.tokenizer.current_token.clone(),
         };
-        error
+        return Into::into(error)
     }
 
 

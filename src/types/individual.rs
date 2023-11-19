@@ -1,4 +1,5 @@
 use crate::types::{event::HasEvents, CustomData, Event};
+
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
@@ -47,12 +48,12 @@ impl Individual {
     }
 
     pub fn add_custom_data(&mut self, data: CustomData) {
-        self.custom_data.push(data)
+        self.custom_data.push(data);
     }
 }
 
 impl HasEvents for Individual {
-    fn add_event(&mut self, event: Event) -> () {
+    fn add_event(&mut self, event: Event){
         self.events.push(event);
     }
     fn events(&self) -> Vec<Event> {

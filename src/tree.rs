@@ -1,4 +1,7 @@
+
+// use std::collections::HashMap;
 use crate::types::{Family, Header, Individual, Media, Repository, Source, Submitter};
+
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +36,7 @@ impl GedcomData {
 
     /// Adds an `Individual` to the tree
     pub fn add_individual(&mut self, individual: Individual) {
+
         self.individuals.push(individual);
     }
 
