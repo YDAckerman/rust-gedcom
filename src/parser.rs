@@ -1,7 +1,7 @@
 //! The state machine that parses a char iterator of the gedcom's contents
 use std::str::Chars;
 use thiserror::Error;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use crate::tokenizer::{Token, Tokenizer};
 use crate::tree::GedcomData;
@@ -146,8 +146,9 @@ impl<'a> Parser<'a> {
                             datetime.push_str(&time);
                             header.date = Some(datetime);
                         } else {
-                            return Err(Into::into(ParseError::MalformedData(self.dbg())))
-                            // panic!("Expected TIME to be under DATE in header.");
+                            let error: anyhow::Error = Into::into(
+                                ParseError::MalformedData(self.dbg()));
+                            return Err(error).context("Expected date under header");
                         }
                     }
                     "GEDC" => {
@@ -368,7 +369,7 @@ impl<'a> Parser<'a> {
 
     fn parse_family_link(&mut self, tag: &str, level: u8) -> Result<FamilyLink> {
         let xref = self.take_line_value()?;
-        let mut link = FamilyLink::new(xref, tag);
+        let mut link = FamilyLink::new(xref, tag)?;
 
         loop {
             if let Token::Level(cur_level) = self.tokenizer.current_token {
@@ -378,7 +379,7 @@ impl<'a> Parser<'a> {
             }
             match &self.tokenizer.current_token {
                 Token::Tag(tag) => match tag.as_str() {
-                    "PEDI" => link.set_pedigree(self.take_line_value()?.as_str()),
+                    "PEDI" => link.set_pedigree(self.take_line_value()?.as_str())?,
                     _ => return Err(self.tag_error()),
                 },
                 Token::Level(_) => self.tokenizer.next_token(),
@@ -471,7 +472,7 @@ impl<'a> Parser<'a> {
 
     fn parse_event(&mut self, tag: &str, level: u8) -> Result<Event> {
         self.tokenizer.next_token();
-        let mut event = Event::from_tag(tag);
+        let mut event = Event::from_tag(tag)?;
         loop {
             if let Token::Level(cur_level) = self.tokenizer.current_token {
                 if cur_level <= level {
@@ -607,11 +608,11 @@ impl<'a> Parser<'a> {
                 Token::Tag(tag) => match tag.as_str() {
                     "CONT" => {
                         value.push('\n');
-                        value.push_str(&self.take_line_value()?)
+                        value.push_str(&self.take_line_value()?);
                     }
                     "CONC" => {
                         value.push(' ');
-                        value.push_str(&self.take_line_value()?)
+                        value.push_str(&self.take_line_value()?);
                     }
                     _ => return Err(self.tag_error()),
                 },
@@ -659,9 +660,10 @@ impl<'a> Parser<'a> {
                 line: self.dbg(),
                 value: val.clone(),
             };
-            return Into::into(error)
+            Into::into(error)
+        } else {
+            panic!("value_error called improperly");
         }
-        panic!("value_error called improperly");
     }
 
     fn token_error(&self) -> anyhow::Error {
@@ -669,7 +671,7 @@ impl<'a> Parser<'a> {
             line: self.dbg(),
             token: self.tokenizer.current_token.clone(),
         };
-        return Into::into(error)
+        Into::into(error)
     }
 
 

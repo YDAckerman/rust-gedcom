@@ -2,6 +2,7 @@ use crate::types::SourceCitation;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 use std::{fmt, string::ToString};
+use anyhow::{Result, anyhow};
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Debug, PartialEq)]
@@ -22,7 +23,7 @@ pub enum EventType {
 
 impl ToString for EventType {
     fn to_string(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -52,8 +53,7 @@ impl Event {
         self.event = EventType::SourceData(value);
     }
 
-    #[must_use]
-    pub fn from_tag(tag: &str) -> Event {
+    pub fn from_tag(tag: &str) -> Result<Event> {
         let etype = match tag {
             "ADOP" => EventType::Adoption,
             "BIRT" => EventType::Birth,
@@ -63,13 +63,13 @@ impl Event {
             "MARR" => EventType::Marriage,
             "RESI" => EventType::Residence,
             "OTHER" => EventType::Other,
-            _ => panic!("Unrecognized event tag: {}", tag),
+            _ => return Err(anyhow!("Unhandled Event Tag {}", tag))
         };
-        Event::new(etype)
+        Ok(Event::new(etype))
     }
 
     pub fn add_citation(&mut self, citation: SourceCitation) {
-        self.citations.push(citation)
+        self.citations.push(citation);
     }
 
     #[must_use]
@@ -78,6 +78,7 @@ impl Event {
     }
 }
 
+// clippy doesn't like this
 impl std::fmt::Debug for Event {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let event_type = format!("{:?} Event", &self.event);
@@ -92,7 +93,7 @@ impl std::fmt::Debug for Event {
 
 /// Trait given to structs representing entities that have events.
 pub trait HasEvents {
-    fn add_event(&mut self, event: Event) -> ();
+    fn add_event(&mut self, event: Event);
     fn events(&self) -> Vec<Event>;
     fn dates(&self) -> Vec<String> {
         let mut dates: Vec<String> = Vec::new();
