@@ -16,7 +16,7 @@ pub struct Family {
     pub individual2: Option<Xref>, // mapped from WIFE
     pub children: Vec<Xref>,
     pub num_children: Option<u8>,
-    events: Vec<Event>,
+    events: Vec<Event>, // why is this private?
 }
 
 impl Family {
