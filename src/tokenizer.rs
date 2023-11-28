@@ -1,5 +1,20 @@
 //! Handles the tokenization of a GEDCOM file
 use std::str::Chars;
+// use thiserror::Error;
+// use anyhow::Result;
+
+/// Errors caught by tokenizer
+// #[derive(Error, Debug)]
+// pub enum TokenizerError {
+//     /// An error reporting the unknown token
+//     #[error("Unhandled Token Type on line {line}: found {token:?}")]
+//     UnhandledTokenType {
+//         /// the line number
+//         line: String,
+//         /// the token found
+//         token: Token,
+//     }
+// }
 
 /// The base enum of Token types
 ///
@@ -93,10 +108,8 @@ impl<'a> Tokenizer<'a> {
             }
             Token::Pointer(_) => Token::Tag(self.extract_word()),
             Token::Tag(_) | Token::CustomTag(_) => Token::LineValue(self.extract_value()),
-            _ => panic!(
-                "line {}: Tokenization error! {:?}",
-                self.line, self.current_token
-            ),
+            _ => panic!("Unhandled tokenizer token on line {} with token {:?}",
+                        self.line, self.current_token)
         };
     }
 
@@ -146,4 +159,12 @@ impl<'a> Tokenizer<'a> {
         let not_a_newline = self.current_char != '\n';
         (self.current_char.is_whitespace() || is_zero_width_space) && not_a_newline
     }
+
+    // fn type_error(&self) -> anyhow::Error {
+    //     let error = TokenizerError::UnhandledTokenType {
+    //         line: self.line.to_string(),
+    //         token: self.current_token,
+    //     };
+    //     return Into::into(error)
+    // }
 }

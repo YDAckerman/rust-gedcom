@@ -1,4 +1,7 @@
 use crate::types::{event::HasEvents, CustomData, Event};
+use anyhow::Result;
+use anyhow::anyhow;
+
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
@@ -47,12 +50,12 @@ impl Individual {
     }
 
     pub fn add_custom_data(&mut self, data: CustomData) {
-        self.custom_data.push(data)
+        self.custom_data.push(data);
     }
 }
 
 impl HasEvents for Individual {
-    fn add_event(&mut self, event: Event) -> () {
+    fn add_event(&mut self, event: Event){
         self.events.push(event);
     }
     fn events(&self) -> Vec<Event> {
@@ -92,24 +95,26 @@ enum Pedigree {
 pub struct FamilyLink(Xref, FamilyLinkType, Option<Pedigree>);
 
 impl FamilyLink {
-    #[must_use]
-    pub fn new(xref: Xref, tag: &str) -> FamilyLink {
+    pub fn new(xref: Xref, tag: &str) -> Result<FamilyLink> {
         let link_type = match tag {
             "FAMC" => FamilyLinkType::Child,
             "FAMS" => FamilyLinkType::Spouse,
-            _ => panic!("Unrecognized family type tag: {}", tag),
+            _ => return Err(anyhow!("Unrecognized family type tag: {}",
+                                            tag)),
         };
-        FamilyLink(xref, link_type, None)
+        Ok(FamilyLink(xref, link_type, None))
     }
 
-    pub fn set_pedigree(&mut self, pedigree_text: &str) {
+    pub fn set_pedigree(&mut self, pedigree_text: &str) -> anyhow::Result<()> {
         self.2 = match pedigree_text.to_lowercase().as_str() {
             "adopted" => Some(Pedigree::Adopted),
             "birth" => Some(Pedigree::Birth),
             "foster" => Some(Pedigree::Foster),
             "sealing" => Some(Pedigree::Sealing),
-            _ => panic!("Unrecognized family link pedigree: {}", pedigree_text),
+            _ => return Err(anyhow!("Unrecognized family link pedigree: {}",
+                                    pedigree_text)),
         };
+        Ok(())
     }
 }
 
