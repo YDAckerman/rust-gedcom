@@ -55,8 +55,9 @@ impl Individual {
 }
 
 impl HasEvents for Individual {
-    fn add_event(&mut self, event: Event){
+    fn add_event(&mut self, event: Event) -> Result<()>{
         self.events.push(event);
+        Ok(())
     }
     fn events(&self) -> Vec<Event> {
         self.events.clone()

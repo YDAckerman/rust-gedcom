@@ -93,7 +93,7 @@ impl std::fmt::Debug for Event {
 
 /// Trait given to structs representing entities that have events.
 pub trait HasEvents {
-    fn add_event(&mut self, event: Event);
+    fn add_event(&mut self, event: Event) -> Result<()>;
     fn events(&self) -> Vec<Event>;
     fn dates(&self) -> Vec<String> {
         let mut dates: Vec<String> = Vec::new();

@@ -1,4 +1,6 @@
 use crate::types::{Event, RepoCitation};
+use anyhow::Result;
+
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
@@ -42,7 +44,8 @@ pub struct SourceData {
 }
 
 impl SourceData {
-    pub fn add_event(&mut self, event: Event) {
+    pub fn add_event(&mut self, event: Event) -> Result<()>{
         self.events.push(event);
+        Ok(())
     }
 }

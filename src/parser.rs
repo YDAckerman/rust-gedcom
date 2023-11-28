@@ -210,7 +210,7 @@ impl<'a> Parser<'a> {
                     | "CHR" | "CHRA" | "CONF" | "CREM" | "DEAT" | "EMIG" | "FCOM" | "GRAD"
                     | "IMMI" | "NATU" | "ORDN" | "RETI" | "RESI" | "PROB" | "WILL" | "EVEN" => {
                         let tag_clone = tag.clone();
-                        individual.add_event(self.parse_event(tag_clone.as_str(), level + 1)?);
+                        individual.add_event(self.parse_event(tag_clone.as_str(), level + 1)?)?;
                     }
                     "FAMC" | "FAMS" => {
                         let tag_clone = tag.clone();
@@ -252,9 +252,9 @@ impl<'a> Parser<'a> {
         while self.tokenizer.current_token != Token::Level(level) {
             match &self.tokenizer.current_token {
                 Token::Tag(tag) => match tag.as_str() {
-                    "MARR" => family.add_event(self.parse_event("MARR", level + 1)?),
-                    "HUSB" => family.set_individual1(self.take_line_value()?),
-                    "WIFE" => family.set_individual2(self.take_line_value()?),
+                    "MARR" => family.add_event(self.parse_event("MARR", level + 1)?)?,
+                    "HUSB" => family.set_individual1(self.take_line_value()?)?,
+                    "WIFE" => family.set_individual2(self.take_line_value()?)?,
                     "CHIL" => family.add_child(self.take_line_value()?),
                     "DIV" => {
                         // TODO
@@ -290,7 +290,7 @@ impl<'a> Parser<'a> {
                         let events_recorded = self.take_line_value()?;
                         let mut event = self.parse_event("OTHER", level + 2)?;
                         event.with_source_data(events_recorded);
-                        source.data.add_event(event);
+                        source.data.add_event(event)?;
                     }
                     "AGNC" => source.data.agency = Some(self.take_line_value()?),
                     "ABBR" => source.abbreviation = Some(self.take_continued_text(level + 1)?),

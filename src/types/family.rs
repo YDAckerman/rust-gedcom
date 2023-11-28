@@ -1,6 +1,7 @@
 use crate::types::{event::HasEvents, Event};
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
+use anyhow::{Result, anyhow};
 
 type Xref = String;
 
@@ -32,18 +33,26 @@ impl Family {
         }
     }
 
-    pub fn set_individual1(&mut self, xref: Xref) {
+    pub fn set_individual1(&mut self, xref: Xref) -> Result<()> {
         match self.individual1 {
-            Some(_) => panic!("First individual of family already exists."),
+            Some(_) => {
+                return Err(anyhow!("Individual1 for family {} already exists",
+                                   self.xref.as_ref().unwrap()))
+            },
             None => self.individual1 = Some(xref),
         };
+        Ok(())
     }
 
-    pub fn set_individual2(&mut self, xref: Xref) {
+    pub fn set_individual2(&mut self, xref: Xref) -> Result<()>{
         match self.individual2 {
-            Some(_) => panic!("Second individual of family already exists."),
+            Some(_) => {
+                return Err(anyhow!("Individual2 for family {} already exists",
+                                   self.xref.as_ref().unwrap()))
+            },
             None => self.individual2 = Some(xref),
         };
+        Ok(())
     }
 
     pub fn add_child(&mut self, xref: Xref) {
@@ -52,14 +61,15 @@ impl Family {
 }
 
 impl HasEvents for Family {
-    fn add_event(&mut self, event: Event) {
+    fn add_event(&mut self, event: Event) -> Result<()> {
         let event_type = &event.event;
         for e in &self.events {
             if &e.event == event_type {
-                panic!("Family already has a {:?} event", e.event);
+                return Err(anyhow!("Family already has a {:?} event", e.event))
             }
         }
         self.events.push(event);
+        Ok(())
     }
     fn events(&self) -> Vec<Event> {
         self.events.clone()
