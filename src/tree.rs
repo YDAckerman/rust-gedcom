@@ -1,11 +1,12 @@
 
-// use std::collections::HashMap;
+use std::collections::HashMap;
 use crate::types::{Family, Header, Individual, Media, Repository, Source, Submitter};
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
 // use std::collections::HashMap;
+type Xref = String;
 
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
@@ -16,9 +17,9 @@ pub struct GedcomData {
     /// List of submitters of the facts
     pub submitters: Vec<Submitter>,
     /// Individuals within the family tree
-    pub individuals: Vec<Individual>,
+    pub individuals: HashMap<Xref, Individual>,
     /// The family units of the tree, representing relationships between individuals
-    pub families: Vec<Family>,
+    pub families: HashMap<Xref, Family>,
     /// A data repository where `sources` are held
     pub repositories: Vec<Repository>,
     /// Sources of facts. _ie._ book, document, census, etc.
@@ -30,14 +31,21 @@ pub struct GedcomData {
 // should maybe store these by xref if available?
 impl GedcomData {
     /// Adds a `Family` (a relationship between individuals) to the tree
-    pub fn add_family(&mut self, family: Family) {
-        self.families.push(family);
+    pub fn add_family(&mut self, xref: Option<Xref>, family: Family) {
+        
+        if let Some(id) = xref {
+            self.families.insert(id, family);
+        };
+        
     }
 
     /// Adds an `Individual` to the tree
-    pub fn add_individual(&mut self, individual: Individual) {
+    pub fn add_individual(&mut self, xref:Option<Xref>, individual: Individual) {
 
-        self.individuals.push(individual);
+        if let Some(id) = xref {
+                self.individuals.insert(id, individual);
+        };
+        
     }
 
     /// Adds a data `Repository` to the tree

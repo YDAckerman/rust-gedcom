@@ -11,7 +11,6 @@ type Xref = String;
 #[derive(Debug)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Individual {
-    pub xref: Option<Xref>, // this MUST exist, so remove Option
     pub name: Option<Name>,
     pub title: Option<String>,
     pub sex: Gender,
@@ -22,24 +21,12 @@ pub struct Individual {
 }
 
 impl Individual {
-    #[must_use]
-    pub fn new(xref: Option<Xref>) -> Individual {
-        Individual {
-            xref,
-            name: None,
-            title: None,
-            sex: Gender::Unknown,
-            events: Vec::new(),
-            families: Vec::new(),
-            custom_data: Vec::new(),
-            last_updated: None,
-        }
-    }
 
     pub fn add_family(&mut self, link: FamilyLink) {
         let mut do_add = true;
         let xref = &link.0;
         for FamilyLink(family, _, _) in &self.families {
+            // I feel like this should result in an error...
             if family.as_str() == xref.as_str() {
                 do_add = false;
             }
@@ -52,6 +39,7 @@ impl Individual {
     pub fn add_custom_data(&mut self, data: CustomData) {
         self.custom_data.push(data);
     }
+    
 }
 
 impl HasEvents for Individual {
@@ -128,4 +116,20 @@ pub struct Name {
     pub prefix: Option<String>,
     pub surname_prefix: Option<String>,
     pub suffix: Option<String>,
+}
+
+impl Default for Individual {
+
+    fn default() -> Self {
+        Individual {
+            name: None,
+            title: None,
+            sex: Gender::Unknown,
+            events: Vec::new(),
+            families: Vec::new(),
+            custom_data: Vec::new(),
+            last_updated: None,
+        }
+    }
+    
 }

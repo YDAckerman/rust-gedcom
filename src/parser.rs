@@ -1,3 +1,4 @@
+
 //! The state machine that parses a char iterator of the gedcom's contents
 use std::str::Chars;
 use thiserror::Error;
@@ -82,8 +83,12 @@ impl<'a> Parser<'a> {
             if let Token::Tag(tag) = &self.tokenizer.current_token {
                 match tag.as_str() {
                     "HEAD" => data.header = self.parse_header()?,
-                    "FAM" => data.add_family(self.parse_family(level, pointer)?),
-                    "INDI" => data.add_individual(self.parse_individual(level, pointer)?),
+                    "FAM" => data.add_family(pointer,
+                                             self.parse_family(level)?),
+                    "INDI" => {
+                        data.add_individual(pointer,
+                                            self.parse_individual(level)?);
+                    }
                     "REPO" => data.add_repository(self.parse_repository(level, pointer)?),
                     "SOUR" => data.add_source(self.parse_source(level, pointer)?),
                     "SUBM" => {
@@ -196,10 +201,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses INDI top-level tag
-    fn parse_individual(&mut self, level: u8, xref: Option<String>) -> Result<Individual> {
+    fn parse_individual(&mut self, level: u8) -> Result<Individual> {
         // skip over INDI tag name
         self.tokenizer.next_token();
-        let mut individual = Individual::new(xref);
+        let mut individual = Individual::default();
 
         while self.tokenizer.current_token != Token::Level(level) {
             match &self.tokenizer.current_token {
@@ -233,7 +238,7 @@ impl<'a> Parser<'a> {
                 },
                 Token::CustomTag(tag) => {
                     let tag_clone = tag.clone();
-                    individual.add_custom_data(self.parse_custom_tag(tag_clone)?)
+                    individual.add_custom_data(self.parse_custom_tag(tag_clone)?);
                 }
                 Token::Level(_) => self.tokenizer.next_token(),
                 _ => return Err(self.token_error()),
@@ -244,17 +249,17 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses FAM top-level tag
-    fn parse_family(&mut self, level: u8, xref: Option<String>) -> Result<Family> {
+    fn parse_family(&mut self, level: u8) -> Result<Family> {
         // skip over FAM tag name
         self.tokenizer.next_token();
-        let mut family = Family::new(xref);
+        let mut family = Family::default();
 
         while self.tokenizer.current_token != Token::Level(level) {
             match &self.tokenizer.current_token {
                 Token::Tag(tag) => match tag.as_str() {
                     "MARR" => family.add_event(self.parse_event("MARR", level + 1)?)?,
-                    "HUSB" => family.set_individual1(self.take_line_value()?)?,
-                    "WIFE" => family.set_individual2(self.take_line_value()?)?,
+                    "HUSB" => family.add_husb(self.take_line_value()?),
+                    "WIFE" => family.add_wife(self.take_line_value()?),
                     "CHIL" => family.add_child(self.take_line_value()?),
                     "DIV" => {
                         // TODO

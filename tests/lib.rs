@@ -32,7 +32,8 @@ mod tests {
 
         // names
         assert_eq!(
-            data.individuals[0]
+            data.individuals.get("@FATHER@")
+                .unwrap()
                 .name
                 .as_ref()
                 .unwrap()
@@ -44,7 +45,8 @@ mod tests {
 
         // title
         assert_eq!(
-            data.individuals[0]
+            data.individuals.get("@FATHER@")
+                .unwrap()
                 .title
                 .as_ref()
                 .unwrap(),
@@ -52,7 +54,10 @@ mod tests {
         );
 
         assert_eq!(
-            data.individuals[1].title.is_none(),
+            data.individuals.get("@MOTHER@")
+                .unwrap()
+                .title
+                .is_none(),
             true
         );
         
@@ -78,9 +83,10 @@ mod tests {
         );
 
         // events
-        let events = data.families[0].events();
+        let events = data.families.get("@FAMILY@").unwrap().events();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].event.to_string(), "Marriage");
         assert_eq!(events[0].date.as_ref().unwrap(), "1 APR 1950");
     }
+    
 }
