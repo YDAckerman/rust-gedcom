@@ -53,11 +53,30 @@ mod tests {
             "title"
         );
 
+        // no title
         assert_eq!(
             data.individuals.get("@MOTHER@")
                 .unwrap()
                 .title
                 .is_none(),
+            true
+        );
+
+        // family spouse
+        assert_eq!(
+            data.individuals.get("@FATHER@")
+                .unwrap()
+                .fam_spouse
+                .contains("@FAMILY@"),
+            true
+        );
+
+        // family child
+        assert_eq!(
+            data.individuals.get("@CHILD@")
+                .unwrap()
+                .fam_child
+                .contains_key("@FAMILY@"),
             true
         );
         

@@ -147,7 +147,7 @@ impl<'a> Parser<'a> {
                         if let Some(date) = header.date {
                             let mut datetime = String::new();
                             datetime.push_str(&date);
-                            datetime.push_str(" ");
+                            datetime.push(' ');
                             datetime.push_str(&time);
                             header.date = Some(datetime);
                         } else {
@@ -219,8 +219,10 @@ impl<'a> Parser<'a> {
                     }
                     "FAMC" | "FAMS" => {
                         let tag_clone = tag.clone();
+                        let xref = self.take_line_value()?;
                         individual
-                            .add_family(self.parse_family_link(tag_clone.as_str(), level + 1)?);
+                            .add_family(xref,
+                                        self.parse_family_link(tag_clone.as_str(), level + 1)?);
                     }
                     "CHAN" => {
                         // assuming it always only has a single DATE subtag
@@ -373,8 +375,8 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_family_link(&mut self, tag: &str, level: u8) -> Result<FamilyLink> {
-        let xref = self.take_line_value()?;
-        let mut link = FamilyLink::new(xref, tag)?;
+        
+        let mut link = FamilyLink::new(tag)?;
 
         loop {
             if let Token::Level(cur_level) = self.tokenizer.current_token {
@@ -449,9 +451,11 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_name(&mut self, level: u8) -> Result<Name> {
-        let mut name = Name::default();
-        name.value = Some(self.take_line_value()?);
-
+        let mut name = Name {
+            value: Some(self.take_line_value()?),
+            ..Default::default()
+        };
+        
         loop {
             if let Token::Level(cur_level) = self.tokenizer.current_token {
                 if cur_level <= level {
@@ -568,7 +572,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        if &value != "" {
+        if !&value.is_empty() {
             address.value = Some(value);
         }
 
@@ -678,6 +682,4 @@ impl<'a> Parser<'a> {
         };
         Into::into(error)
     }
-
-
 }
