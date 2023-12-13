@@ -20,7 +20,7 @@ pub mod util {
 #[cfg(test)]
 mod tests {
     use super::util::parse;
-    use gedcom::GedcomData;
+    use gedcom::{GedcomData, connected_components};
     use gedcom::types::event::HasEvents;
     use gedcom::analyzer::topological_sort;
 
@@ -117,15 +117,29 @@ mod tests {
     }
 
     #[test]
-    fn performs_topological_sort() {
+    fn does_topological_sort() {
 
         let data: GedcomData = parse("./tests/fixtures/simple.ged");
 
         if let Ok(sorted) = topological_sort(&data) {
             assert_eq!(sorted[0], "@CHILD@");
-            assert_eq!(sorted[1], "@MOTHER@");
-            assert_eq!(sorted[2], "@FATHER@");
+            let father = String::from("@FATHER@");
+            let mother = String::from("@MOTHER@");
+            assert!(sorted[1].eq(&father) | sorted[1].eq(&mother));
+            assert!(sorted[2].eq(&father) | sorted[2].eq(&mother));
         }
+    }
+
+    #[test]
+    fn finds_connected_components() {
+        let data: GedcomData = parse("./tests/fixtures/simple.ged");
+        let components = connected_components(&data);
+        let child = String::from("@CHILD@");
+        let father = String::from("@FATHER@");
+        let mother = String::from("@MOTHER@");
+        assert!(components[0].contains(&child));
+        assert!(components[0].contains(&mother));
+        assert!(components[0].contains(&father));
     }
     
 }

@@ -35,6 +35,7 @@ use anyhow::Result;
 
 pub mod analyzer;
 pub use analyzer::topological_sort;
+pub use analyzer::connected_components;
 
 /// Helper function for converting GEDCOM file content stream to parsed data.
 pub fn parse(content: std::str::Chars) -> Result<GedcomData> {
