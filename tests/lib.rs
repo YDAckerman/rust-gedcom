@@ -1,26 +1,34 @@
 #[cfg(test)]
 pub mod util {
     use std::path::PathBuf;
+    use gedcom::GedcomData;
+    use gedcom::parser::Parser;
+    
     pub fn read_relative(path: &str) -> String {
         let path_buf: PathBuf = PathBuf::from(path);
         let absolute_path: PathBuf = std::fs::canonicalize(path_buf).unwrap();
         std::fs::read_to_string(absolute_path).unwrap()
     }
+
+    pub fn parse(path: &str) -> GedcomData {
+        let simple_ged: String = read_relative(path);
+        let mut parser = Parser::new(simple_ged.chars());
+        parser.parse_record().unwrap()
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::util::read_relative;
-    use gedcom::parser::Parser;
+    use super::util::parse;
+    use gedcom::GedcomData;
     use gedcom::types::event::HasEvents;
+    use gedcom::analyzer::topological_sort;
 
     #[test]
     fn parses_basic_gedcom() {
-        let simple_ged: String = read_relative("./tests/fixtures/simple.ged");
-        assert!(simple_ged.len() > 0);
-
-        let mut parser = Parser::new(simple_ged.chars());
-        let data = parser.parse_record().unwrap();
+        
+        let data: GedcomData = parse("./tests/fixtures/simple.ged");
+        
         assert_eq!(data.individuals.len(), 3);
         assert_eq!(data.families.len(), 1);
         assert_eq!(data.submitters.len(), 1);
@@ -106,6 +114,18 @@ mod tests {
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].event.to_string(), "Marriage");
         assert_eq!(events[0].date.as_ref().unwrap(), "1 APR 1950");
+    }
+
+    #[test]
+    fn performs_topological_sort() {
+
+        let data: GedcomData = parse("./tests/fixtures/simple.ged");
+
+        if let Ok(sorted) = topological_sort(&data) {
+            assert_eq!(sorted[0], "@CHILD@");
+            assert_eq!(sorted[1], "@MOTHER@");
+            assert_eq!(sorted[2], "@FATHER@");
+        }
     }
     
 }

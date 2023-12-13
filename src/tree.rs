@@ -78,45 +78,4 @@ impl GedcomData {
     }
 }
 
-impl GedcomData {
 
-    fn individual_has_children(&self, xref: &Xref) -> bool {
-        match self.individuals.get(xref) {
-            Some(indv) => {
-                indv.fam_spouse
-                    .iter()
-                    .any(|fam_xref|
-                         self.family_has_children(fam_xref))
-            },
-            None => false,
-        }
-    }
-
-    fn family_has_children(&self, xref: &Xref) -> bool {
-        let count = match self.families.get(xref) {
-            Some(fam) => {
-                if let Some(count) = fam.num_children {
-                    count
-                }
-                else {
-                    0
-                }
-            },
-            None => 0,
-        };
-        count > 0
-    }
-
-    #[must_use]
-    /// get the terminal individuals of the tree
-    pub fn get_terminal_leaves(&self) -> Vec<&Xref> {
-        // lifetimes elided
-        self.individuals.keys()
-            .filter(|xref|
-                    self.individual_has_children(xref)
-            )
-            .collect::<Vec<&Xref>>()
-
-    }
-    
-}
