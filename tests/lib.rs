@@ -134,6 +134,7 @@ mod tests {
     fn finds_connected_components() {
         let data: GedcomData = parse("./tests/fixtures/simple.ged");
         let components = connected_components(&data);
+        
         let child = String::from("@CHILD@");
         let father = String::from("@FATHER@");
         let mother = String::from("@MOTHER@");
