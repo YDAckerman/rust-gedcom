@@ -1,7 +1,6 @@
 use crate::tree::GedcomData;
 use anyhow::{Result, anyhow};
-use std::collections::{HashMap, HashSet};
-// use serde_json::{json, Value, Error};
+use std::collections::{HashMap, HashSet, BTreeSet};
 
 type Xref = String;
 
@@ -58,7 +57,8 @@ pub fn topological_sort<'b>(tree: &'b GedcomData) -> Result<Vec<&'b Xref>>{
     }
 
     fn visit<'b>(tree: &'b GedcomData,
-                 marks: &mut HashMap<&'b String, Mark>,
+                 to_visit: &mut BTreeSet<&'b Xref>,
+                 marks: &mut HashMap<&'b Xref, Mark>,
                  sorted: &mut Vec<&'b Xref>,
                  xref: &'b Xref) -> Result<()> {
         
@@ -75,7 +75,7 @@ pub fn topological_sort<'b>(tree: &'b GedcomData) -> Result<Vec<&'b Xref>>{
             for xref_fam in &indv.fam_spouse {
                 if let Some(fam) = tree.families.get(xref_fam) {
                     for xref_chld in &fam.children {
-                        visit(tree, marks, sorted, xref_chld)?;
+                        visit(tree, to_visit, marks, sorted, xref_chld)?;
                     }
                 }
             }
@@ -83,15 +83,17 @@ pub fn topological_sort<'b>(tree: &'b GedcomData) -> Result<Vec<&'b Xref>>{
         
         marks.insert(xref, Mark::Perm);
         sorted.push(xref);
+        to_visit.remove(xref);
         
         Ok(())
     }
 
+    let mut to_visit: BTreeSet<&Xref> = tree.individuals.keys().collect();
     let mut marks: HashMap<&'b Xref, Mark> = HashMap::new();
     let mut sorted: Vec<&'b Xref> = Vec::new();
-    
-    for xref in tree.individuals.keys() {
-        visit(tree, &mut marks, &mut sorted, xref)?;
+
+    while let Some(xref) = to_visit.pop_first() {
+        visit(tree, &mut to_visit, &mut marks, &mut sorted, xref)?;
     }
 
     Ok(sorted)
@@ -99,14 +101,11 @@ pub fn topological_sort<'b>(tree: &'b GedcomData) -> Result<Vec<&'b Xref>>{
 
 
 pub fn connected_components<'b>(tree: &'b GedcomData) -> Vec<HashSet<&'b Xref>> {
-
+    
     fn bfs<'b>(tree: &'b GedcomData,
-               unvisited: &mut HashSet<&'b Xref>,
-               xref: &'b Xref) -> Option<HashSet<&'b Xref>> {
-        if !unvisited.contains(xref) {
-            return None;
-        }
-        unvisited.remove(xref);
+               unvisited: &mut BTreeSet<&'b Xref>,
+               xref: &'b Xref) -> HashSet<&'b Xref> {
+
         let mut stack = vec![xref];
         let mut visited: HashSet<&'b Xref> = HashSet::from([xref]);
         
@@ -116,8 +115,7 @@ pub fn connected_components<'b>(tree: &'b GedcomData) -> Vec<HashSet<&'b Xref>> 
                     if let Some(fam_sp) = tree.families.get(xref_fam_sp) {
                         
                         for xref_chld in &fam_sp.children {
-                            if unvisited.contains(xref_chld) {
-                                unvisited.remove(xref_chld);
+                            if unvisited.remove(xref_chld) {
                                 stack.push(xref_chld);
                                 visited.insert(xref_chld);
                             }
@@ -129,16 +127,14 @@ pub fn connected_components<'b>(tree: &'b GedcomData) -> Vec<HashSet<&'b Xref>> 
                     if let Some(fam_chld) = tree.families.get(xref_fam_chld) {
                         
                         for xref_parent in &fam_chld.husbs {
-                            if unvisited.contains(xref_parent) {
-                                unvisited.remove(xref_parent);
+                            if unvisited.remove(xref_parent) {
                                 stack.push(xref_parent);
                                 visited.insert(xref_parent);
                             }
                         }
 
                         for xref_parent in &fam_chld.wives {
-                            if unvisited.contains(xref_parent) {
-                                unvisited.remove(xref_parent);
+                            if unvisited.remove(xref_parent) {
                                 stack.push(xref_parent);
                                 visited.insert(xref_parent);
                             }
@@ -148,17 +144,14 @@ pub fn connected_components<'b>(tree: &'b GedcomData) -> Vec<HashSet<&'b Xref>> 
             }
         }
         
-        Some(visited)
+        visited
     }
 
-    let mut unvisited: HashSet<&'b Xref> = tree.individuals.keys().collect();
+    let mut unvisited: BTreeSet<&'b Xref> = tree.individuals.keys().collect();
     let mut components = Vec::new();
 
-    for xref in tree.individuals.keys() {
-        if let Some(component) = bfs(tree,
-                                     &mut unvisited, xref) {
-            components.push(component);
-        }
+    while let Some(xref) = unvisited.pop_first() {
+        components.push(bfs(tree, &mut unvisited, xref));
     }
 
     components
