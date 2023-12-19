@@ -1,6 +1,7 @@
 use crate::tree::GedcomData;
 use anyhow::{Result, anyhow};
 use std::collections::{HashMap, HashSet};
+// use serde_json::{json, Value, Error};
 
 type Xref = String;
 
@@ -42,6 +43,10 @@ type Xref = String;
 //         )
 //         .collect::<Vec<&Xref>>()
 
+// }
+
+// pub fn get_individual_data(tree: GedcomData) -> serde_json::Value {
+    
 // }
 
 /// sort the individuals in topological order

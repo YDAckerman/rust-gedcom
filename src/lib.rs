@@ -20,7 +20,8 @@ This crate contains an optional `"json"` feature that implements serialization &
 #![warn(missing_docs)]
 
 #[macro_use]
-mod util;
+pub mod util;
+pub use util::parse;
 
 pub mod parser;
 pub use parser::ParseError;
@@ -31,16 +32,8 @@ pub mod types;
 mod tree;
 pub use tree::GedcomData;
 
-use anyhow::Result;
-
 pub mod analyzer;
 pub use analyzer::topological_sort;
 pub use analyzer::connected_components;
 
-/// Helper function for converting GEDCOM file content stream to parsed data.
-pub fn parse(content: std::str::Chars) -> Result<GedcomData> {
-    let mut p = parser::Parser::new(content);
-    let tree = p.parse_record()?;
 
-    Ok(tree)
-}
