@@ -57,6 +57,8 @@ pub fn topological_sort<'b>(tree: &'b GedcomData) -> Result<Vec<&'b Xref>>{
                  marks: &mut HashMap<&'b Xref, Mark>,
                  sorted: &mut Vec<&'b Xref>,
                  xref: &'b Xref) -> Result<()> {
+
+        to_visit.remove(xref);
         
         if let Some(mark) = marks.get(xref) {
             match mark {
@@ -79,7 +81,6 @@ pub fn topological_sort<'b>(tree: &'b GedcomData) -> Result<Vec<&'b Xref>>{
         
         marks.insert(xref, Mark::Perm);
         sorted.push(xref);
-        to_visit.remove(xref);
         
         Ok(())
     }
