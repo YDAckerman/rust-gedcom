@@ -1,12 +1,10 @@
 use crate::types::SourceCitation;
-#[cfg(feature = "json")]
-use serde::{Deserialize, Serialize};
 use std::{fmt, string::ToString};
 use anyhow::{Result, anyhow};
+use serde::{Serialize, Deserialize};
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EventType {
     Adoption,
     Birth,
@@ -28,8 +26,7 @@ impl ToString for EventType {
 }
 
 /// Event fact
-#[derive(Clone)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Event {
     pub event: EventType,
     pub date: Option<String>,

@@ -1,9 +1,11 @@
 use gedcom::parser::Parser;
+use gedcom::util::parse;
 use gedcom::GedcomData;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
 use anyhow::Result;
+use serde_json;
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -19,21 +21,11 @@ fn main() -> Result<()> {
         usage("");
     }
 
-    let data: GedcomData;
-
-    let contents = read_relative(filename)?;
-    let mut parser = Parser::new(contents.chars());
-    data = parser.parse_record()?;
+    let data = parse(filename)?;
     println!("Parsing complete!");
     data.stats();
 
     Ok(())
-}
-
-fn read_relative(path: &str) -> Result<String, std::io::Error> {
-    let path_buf: PathBuf = PathBuf::from(path);
-    let absolute_path: PathBuf = fs::canonicalize(path_buf)?;
-    fs::read_to_string(absolute_path)
 }
 
 fn usage(msg: &str) {

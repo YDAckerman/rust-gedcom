@@ -1,15 +1,12 @@
 
 use std::collections::HashMap;
 use crate::types::{Family, Header, Individual, Media, Repository, Source, Submitter};
-
-#[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
 // use std::collections::HashMap;
 type Xref = String;
 
-#[derive(Debug, Default)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Debug, Default, Serialize, Deserialize)]
 /// The data structure representing all the data within a gedcom file
 pub struct GedcomData {
     /// Header containing file metadata

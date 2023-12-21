@@ -44,6 +44,10 @@ type Xref = String;
 
 // }
 
+// pub fn get_individual_data(tree: GedcomData) -> serde_json::Value {
+    
+// }
+
 /// sort the individuals in topological order
 pub fn topological_sort<'b>(tree: &'b GedcomData) -> Result<Vec<&'b Xref>>{
 

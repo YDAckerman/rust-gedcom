@@ -3,15 +3,12 @@ use anyhow::Result;
 use anyhow::anyhow;
 use std::collections::HashMap;
 use std::collections::HashSet;
-
-#[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
 type Xref = String;
 
 /// A Person within the family tree
-#[derive(Debug)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Individual {
     pub name: Option<Name>,
     pub title: Option<String>,
@@ -55,8 +52,7 @@ impl HasEvents for Individual {
 }
 
 /// Gender of an `Individual`
-#[derive(Debug)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Gender {
     Male,
     Female,
@@ -65,15 +61,13 @@ pub enum Gender {
     Unknown,
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Debug, Serialize, Deserialize)]
 enum FamilyLinkType {
     Spouse,
     Child,
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Pedigree {
     Adopted,
     Birth,
@@ -81,8 +75,7 @@ pub enum Pedigree {
     Sealing,
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FamilyLink(FamilyLinkType, Option<Pedigree>);
 
 impl FamilyLink {
@@ -109,8 +102,7 @@ impl FamilyLink {
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Name {
     pub value: Option<String>,
     pub given: Option<String>,

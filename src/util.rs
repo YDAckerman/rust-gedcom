@@ -1,3 +1,8 @@
+use std::path::PathBuf;
+use crate::parser::Parser;
+use crate::tree::GedcomData;
+use anyhow::Result;
+
 /// Macro for displaying `Option`s in debug mode without the text wrapping.
 #[macro_export]
 macro_rules! fmt_optional_value {
@@ -8,4 +13,16 @@ macro_rules! fmt_optional_value {
             $debug_struct.field($prop, &"None");
         }
     };
+}
+
+pub fn parse(path: &str) -> Result<GedcomData> {
+    let simple_ged: String = read_relative(path);
+    let mut parser = Parser::new(simple_ged.chars());
+    parser.parse_record()
+}
+
+fn read_relative(path: &str) -> String {
+    let path_buf: PathBuf = PathBuf::from(path);
+    let absolute_path: PathBuf = std::fs::canonicalize(path_buf).unwrap();
+    std::fs::read_to_string(absolute_path).unwrap()
 }
