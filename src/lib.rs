@@ -1,19 +1,16 @@
 /*! A parser for GEDCOM files
 
 ```rust
-use gedcom::parser::Parser;
+use gedcom::util::parse;
+use gedcom::GedcomData;
 
 // the parser takes the gedcom file contents as a chars iterator
-let gedcom_source = std::fs::read_to_string("./tests/fixtures/sample.ged").unwrap();
-
-let mut parser = Parser::new(gedcom_source.chars());
-let gedcom_data = parser.parse_record().unwrap();
+let gedcom_data = parse("./tests/fixtures/sample.ged").unwrap();
 
 // output some stats on the gedcom contents
 gedcom_data.stats();
 ```
 
-This crate contains an optional `"json"` feature that implements serialization & deserialization to json with [`serde`](https://serde.rs).
 */
 
 #![deny(clippy::pedantic)]
@@ -33,7 +30,5 @@ mod tree;
 pub use tree::GedcomData;
 
 pub mod analyzer;
-pub use analyzer::topological_sort;
-pub use analyzer::connected_components;
-
+pub use analyzer::Analyzer;
 

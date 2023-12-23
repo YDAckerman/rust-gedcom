@@ -1,11 +1,8 @@
-use gedcom::parser::Parser;
 use gedcom::util::parse;
 use gedcom::GedcomData;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
 use anyhow::Result;
-use serde_json;
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();

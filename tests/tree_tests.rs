@@ -1,7 +1,6 @@
 use gedcom::util::parse;
-use gedcom::{GedcomData, connected_components};
+use gedcom::{GedcomData, Analyzer};
 use gedcom::types::event::HasEvents;
-use gedcom::analyzer::topological_sort;
 
 #[test]
 fn parses_basic_gedcom() {
@@ -100,24 +99,27 @@ fn does_topological_sort() {
 
     let data = parse("./tests/fixtures/simple.ged").unwrap();
 
-    if let Ok(sorted) = topological_sort(&data) {
-        assert_eq!(sorted[0], "@CHILD@");
+    if let Ok(analyzer) = Analyzer::new(&data) {
+        assert_eq!(analyzer.individuals_sorted[0], "@CHILD@");
         let father = String::from("@FATHER@");
         let mother = String::from("@MOTHER@");
-        assert!(sorted[1].eq(&father) | sorted[1].eq(&mother));
-        assert!(sorted[2].eq(&father) | sorted[2].eq(&mother));
+        assert!(analyzer.individuals_sorted[1].eq(&father) | analyzer.individuals_sorted[1].eq(&mother));
+        assert!(analyzer.individuals_sorted[2].eq(&father) | analyzer.individuals_sorted[2].eq(&mother));
     }
 }
 
 #[test]
 fn finds_connected_components() {
+    
     let data = parse("./tests/fixtures/simple.ged").unwrap();
-    let components = connected_components(&data);
-    let child = String::from("@CHILD@");
-    let father = String::from("@FATHER@");
-    let mother = String::from("@MOTHER@");
-    assert!(components[0].contains(&child));
-    assert!(components[0].contains(&mother));
-    assert!(components[0].contains(&father));
+    
+    if let Ok(analyzer) = Analyzer::new(&data) {
+        let child = String::from("@CHILD@");
+        let father = String::from("@FATHER@");
+        let mother = String::from("@MOTHER@");
+        assert!(analyzer.components[0].contains(&child));
+        assert!(analyzer.components[0].contains(&mother));
+        assert!(analyzer.components[0].contains(&father));
+    }
 }
 
