@@ -1,5 +1,6 @@
 use gedcom::util::parse;
 use gedcom::types::Name;
+use gedcom::Analyzer;
 use serde_json;
 use serde_test::{assert_tokens, Token};
 
@@ -111,4 +112,16 @@ fn serde_entire_gedcom_tree() {
 
     // let json_data = serde_json::to_string_pretty(&data.individuals).unwrap();
     // panic!("{:?}", json_data);
+}
+
+#[test]
+fn serde_name_counts() {
+    let data = parse("./tests/fixtures/simple.ged").unwrap();
+
+    if let Ok(analyzer) = Analyzer::new(&data) {
+        assert_eq!(
+            analyzer.count_individual_names().unwrap(),
+            "{\"/Child/\":1,\"/Father/\":1,\"/Mother/\":1}"
+    )
+    }
 }

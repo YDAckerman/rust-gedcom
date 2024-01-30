@@ -5,7 +5,7 @@
 use crate::tree::GedcomData;
 use anyhow::{Result, anyhow};
 use std::collections::{HashMap, HashSet, BTreeSet};
-use serde_json::to_string;
+use serde_json::{to_string, to_string_pretty};
 
 type Xref = String;
 
@@ -50,6 +50,32 @@ impl<'b> Analyzer<'b> {
     ///
     pub fn get_individual_json(&self) -> std::result::Result<String, serde_json::Error> {
         to_string(&self.tree.individuals)
+    }
+
+    /// return name counts in a json string
+    ///
+    /// # Errors
+    /// * `serde_json::Error`
+    ///
+    pub fn count_individual_names(&self) -> std::result::Result<String, serde_json::Error> {
+        let mut counter = HashMap::new();
+
+        for &xref in &self.individuals_sorted {
+
+            if let Some(indv) = self.tree.individuals.get(xref) {
+                if let Some(name) = &indv.name {
+                    if let Some(val) = &name.value {
+                        match counter.get(&val) {
+                            Some(count) => counter.insert(val, count + 1),
+                            None => counter.insert(val, 1),
+                        };
+                    }
+                }
+            }
+        }
+
+        to_string(&counter)
+        
     }
 
     
